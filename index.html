@@ -277,10 +277,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <input type="number" class="lottery-input" id="drawNum" min="1" placeholder="N" autocomplete="off">
       <span class="input-hint">人</span>
       <div class="quick-picks">
-        <button class="quick-btn" onclick="quickPick(1)">1</button>
-        <button class="quick-btn" onclick="quickPick(3)">3</button>
-        <button class="quick-btn" onclick="quickPick(5)">5</button>
-        <button class="quick-btn" onclick="quickPick(10)">10</button>
+        <button class="quick-btn" onclick="quickPick(1, this)">1</button>
+        <button class="quick-btn" onclick="quickPick(3, this)">3</button>
+        <button class="quick-btn" onclick="quickPick(5, this)">5</button>
+        <button class="quick-btn" onclick="quickPick(10, this)">10</button>
       </div>
       <button class="btn btn-go" id="goBtn" onclick="startDraw()">开始抽奖</button>
     </div>
@@ -596,7 +596,7 @@ const ALL_DATA = [
 // 格式如："CSIG3班" → { bg: "CSIG", classNum: "3", display: "3班 · CSIG" }
 // 贪婪匹配 .+ 确保 S1/S2/S3 等以数字结尾的 BG 名被正确解析
 function parseClass(className) {
-  const m = className.match(/^(.+)(\d)\s*班$/);
+  const m = className.match(/^(.+?)(\d+)\s*班$/);
   if (m) {
     return { bg: m[1].trim(), classNum: m[2], display: m[2] + '班 · ' + m[1].trim(), fullClass: className };
   }
@@ -645,13 +645,13 @@ function setupKeyboard() {
 }
 
 // ==================== QUICK PICK ====================
-function quickPick(n) {
+function quickPick(n, btn) {
   if (isDrawing) return;
   const input = document.getElementById('drawNum');
   input.value = n;
   // Highlight active quick button
   document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 // ==================== INTERACTION LOCK ====================
@@ -711,9 +711,9 @@ function startDraw() {
   // Update stats maps
   winners.forEach(w => {
     const parsed = parseClass(w.className);
-    const classKey = parsed.classNum + '班';
+    const classKey = w.className; // 完整班级名作 key，避免 CDG1班 和 CSIG1班 混统
     classWinCount[classKey] = (classWinCount[classKey] || 0) + 1;
-    const bgKey = /^S\d$/.test(parsed.bg) ? 'S线' : parsed.bg;
+    const bgKey = /^S\d*$/.test(parsed.bg) ? 'S线' : parsed.bg;
     bgWinCount[bgKey] = (bgWinCount[bgKey] || 0) + 1;
   });
 
@@ -927,6 +927,7 @@ function nextRound() {
   document.getElementById('resetBtn').style.display = 'none';
   document.getElementById('lotteryControl').style.display = 'flex';
   document.getElementById('drawNum').value = '';
+  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('drawNum').focus();
   if (candidates.length === 0) {
     document.getElementById('goBtn').disabled = true;
