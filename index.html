@@ -738,10 +738,10 @@ function startDraw() {
   generateCards(winners);
 
   // Animate: wiggle + slot machine roll, then flip
-  const slotDuration = 1800 + winners.length * 300 + 500; // total slot rolling time
-  setTimeout(() => startWiggle(), 300);
-  setTimeout(() => startSlotRoll(winners), 600);
-  setTimeout(() => flipCards(winners), slotDuration + 800);
+  const slotDuration = 1000 + winners.length * 150 + 300; // total slot rolling time (加速版)
+  setTimeout(() => startWiggle(), 200);
+  setTimeout(() => startSlotRoll(winners), 400);
+  setTimeout(() => flipCards(winners), slotDuration + 500);
 
   updateStats();
 }
@@ -808,9 +808,9 @@ function startSlotRoll(winners) {
     card.classList.add('slot-rolling');
     const slotEl = card.querySelector('.slot-name');
     // Each card rolls through random names
-    let speed = 60; // start fast (ms per name change)
+    let speed = 50; // start fast (ms per name change)
     let elapsed = 0;
-    const totalDuration = 1800 + idx * 300; // stagger: later cards roll longer
+    const totalDuration = 1000 + idx * 150; // stagger: later cards roll longer (加速版)
     const targetName = winners[idx].name;
 
     function tick() {
@@ -881,17 +881,17 @@ function flipCards(winners) {
   let delay = 0;
   const n = cards.length;
   cards.forEach((card, i) => {
-    // Suspense timing: fast start, dramatic slowdown for final cards
+    // Suspense timing: fast start, slight slowdown for final cards (加速版)
     let interval;
     if (n <= 2) {
-      interval = 800;
+      interval = 500;
     } else if (n <= 3) {
-      interval = 600 + i * 200;
+      interval = 350 + i * 150;
     } else {
       const progress = i / (n - 1);
-      if (progress < 0.5) interval = 350;
-      else if (progress < 0.8) interval = 350 + (progress - 0.5) * 1200;
-      else interval = 700 + (progress - 0.8) * 2500; // Last 20% much slower for suspense
+      if (progress < 0.5) interval = 200;
+      else if (progress < 0.8) interval = 200 + (progress - 0.5) * 600;
+      else interval = 400 + (progress - 0.8) * 1200; // Last 20% slightly slower
     }
 
     setTimeout(() => {
