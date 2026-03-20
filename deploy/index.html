@@ -737,12 +737,11 @@ function startDraw() {
   // Generate cards
   generateCards(winners);
 
-  // Animate: wiggle + slot machine roll, then flip
-  const flipInterval = 150; // 每张卡翻牌间隔，老虎机也用这个节奏
-  const slotDuration = 500 + winners.length * flipInterval; // 老虎机总滚动时间 = 与翻牌总时间同步
+  // Animate: wiggle + slot machine roll → each card flips when its slot stops
+  const cardInterval = 300; // 每张卡之间的老虎机滚动差（越后面滚越久）
+  const baseRollTime = 1200; // 第一张卡的最低滚动时间
   setTimeout(() => startWiggle(), 100);
-  setTimeout(() => startSlotRoll(winners, flipInterval), 200);
-  setTimeout(() => flipCards(winners, flipInterval), slotDuration + 200);
+  setTimeout(() => startSlotRoll(winners, cardInterval, baseRollTime), 200);
 
   updateStats();
 }
@@ -799,38 +798,63 @@ function startWiggle() {
 // ==================== SLOT MACHINE ROLL ====================
 let slotTimers = []; // track interval IDs so we can clean up
 
-function startSlotRoll(winners, flipInterval) {
+function startSlotRoll(winners, cardInterval, baseRollTime) {
   slotTimers.forEach(t => clearInterval(t));
   slotTimers = [];
   const cards = document.querySelectorAll('.card');
   const allNames = ALL_DATA.map(d => d.name);
+  const n = winners.length;
+  let flippedCount = 0;
 
   cards.forEach((card, idx) => {
     card.classList.add('slot-rolling');
     const slotEl = card.querySelector('.slot-name');
-    // Each card rolls through random names
-    let speed = 40; // start fast (ms per name change)
+    let speed = 40; // ms per name change
     let elapsed = 0;
-    const totalDuration = 500 + idx * flipInterval; // 每张卡滚动时间与翻牌节奏同步
+    // 每张卡的老虎机滚动时间：越靠后滚得越久
+    const totalDuration = baseRollTime + idx * cardInterval;
     const targetName = winners[idx].name;
 
     function tick() {
-      // Pick a random name (not the actual winner most of the time)
       const randomName = allNames[Math.floor(Math.random() * allNames.length)];
       slotEl.textContent = randomName;
     }
 
-    // Phase 1: fast rolling
+    // 老虎机停下后立即翻牌
+    function settleAndFlip() {
+      slotEl.textContent = targetName;
+      card.classList.remove('wiggle');
+      card.classList.remove('slot-rolling');
+      card.classList.add('slot-settled');
+      // 立刻翻牌
+      setTimeout(() => {
+        card.classList.add('flipped');
+        if (soundEnabled) playFlip();
+        setTimeout(() => card.classList.add('halo-active'), 400);
+
+        flippedCount++;
+        // 最后一张卡翻完 → 庆祝
+        if (flippedCount === n) {
+          setTimeout(() => {
+            cards.forEach(c => c.classList.add('celebrating'));
+            launchConfetti();
+            if (soundEnabled) playWin();
+            showNextButton();
+            isDrawing = false;
+            unlockInteraction();
+          }, 500);
+        }
+      }, 80); // 停下后 80ms 翻牌，几乎无缝
+    }
+
+    // 快速滚动阶段
     const intervalId = setInterval(() => {
       elapsed += speed;
-      if (elapsed >= totalDuration - 400) {
-        // Phase 2: settle on the winner name
+      if (elapsed >= totalDuration) {
         clearInterval(intervalId);
-        slotEl.textContent = targetName;
-        card.classList.add('slot-settled');
-        card.classList.remove('wiggle');
-      } else if (elapsed >= totalDuration * 0.6) {
-        // Slow down phase
+        settleAndFlip();
+      } else if (elapsed >= totalDuration * 0.7) {
+        // 减速阶段：换名频率不变但视觉上准备停下
         tick();
       } else {
         tick();
@@ -839,76 +863,33 @@ function startSlotRoll(winners, flipInterval) {
 
     slotTimers.push(intervalId);
 
-    // Gradually slow down using recursive setTimeout approach for natural deceleration
-    let slowPhaseStart = totalDuration * 0.55;
+    // 渐进减速 + 最终停下
+    const slowPhaseStart = totalDuration * 0.6;
     let currentDelay = speed;
     function slowRoll() {
-      if (elapsed >= totalDuration - 400) return;
-      if (elapsed >= slowPhaseStart) {
-        currentDelay = Math.min(300, currentDelay * 1.15);
-      }
+      if (elapsed >= totalDuration) return;
+      currentDelay = Math.min(200, currentDelay * 1.12);
       const randomName = allNames[Math.floor(Math.random() * allNames.length)];
       slotEl.textContent = randomName;
+      elapsed += currentDelay;
+      if (elapsed >= totalDuration) {
+        settleAndFlip();
+        return;
+      }
       const timerId = setTimeout(slowRoll, currentDelay);
       slotTimers.push(timerId);
     }
-    // Start slow roll after 55% of duration
+
     const slowStartTimer = setTimeout(() => {
       clearInterval(intervalId);
       slowRoll();
-      // Final settle
-      const settleTimer = setTimeout(() => {
-        slotEl.textContent = targetName;
-        card.classList.add('slot-settled');
-        card.classList.remove('wiggle');
-      }, totalDuration - slowPhaseStart - 200);
-      slotTimers.push(settleTimer);
     }, slowPhaseStart);
     slotTimers.push(slowStartTimer);
   });
 }
 
-function flipCards(winners, flipInterval) {
-  const cards = document.querySelectorAll('.card');
-  // Clean up slot rolling classes
-  cards.forEach(c => {
-    c.classList.remove('wiggle');
-    c.classList.remove('slot-rolling');
-    c.classList.remove('slot-settled');
-  });
-  slotTimers.forEach(t => { clearInterval(t); clearTimeout(t); });
-  slotTimers = [];
-
-  let delay = 0;
-  const n = cards.length;
-  cards.forEach((card, i) => {
-    // 统一间隔，与老虎机节奏一致
-    const interval = flipInterval;
-
-    setTimeout(() => {
-      card.classList.add('flipped');
-      if (soundEnabled) playFlip();
-
-      // Add subtle gold edge glow after flip completes
-      setTimeout(() => {
-        card.classList.add('halo-active');
-      }, 400);
-
-      // Celebrate effect on last card
-      if (i === n - 1) {
-        setTimeout(() => {
-          cards.forEach(c => c.classList.add('celebrating'));
-          launchConfetti();
-          if (soundEnabled) playWin();
-          showNextButton();
-          isDrawing = false;
-          unlockInteraction();
-        }, 700);
-      }
-    }, delay);
-    delay += interval;
-  });
-}
+// flipCards 已整合到 startSlotRoll 中，每张卡停下时直接翻牌
+function flipCards() {}
 
 function showNextButton() {
   document.getElementById('nextBtn').style.display = 'inline-block';
