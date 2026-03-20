@@ -1130,90 +1130,62 @@ function launchConfetti() {
   }
 }
 
-// ==================== SOUND (QQ经典消息提示音) ====================
+// ==================== SOUND ====================
 let audioCtx;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
-// 运行时生成QQ经典提示音的AudioBuffer
-// QQ经典消息提示音 = 三个短促的高音"嘀嘀嘀"
-// 频率约 C6 (1046Hz)，每个嘀约80ms，间隔约60ms
-let qqMsgBuffer = null;   // 完整三连嘀
-let qqTickBuffer = null;  // 单个嘀
-let qqFlipBuffer = null;  // 双连嘀
-
-function generateQQToneBuffer(beepCount) {
-  const ctx = getAudioCtx();
-  const sr = ctx.sampleRate;
-  const beepDur = 0.08;   // 每个嘀 80ms
-  const gapDur = 0.06;    // 间隔 60ms
-  const totalDur = beepCount * beepDur + (beepCount - 1) * gapDur + 0.05;
-  const len = Math.ceil(sr * totalDur);
-  const buf = ctx.createBuffer(1, len, sr);
-  const data = buf.getChannelData(0);
-  const freq = 1046.5; // C6 — QQ经典提示音频率
-
-  for (let b = 0; b < beepCount; b++) {
-    const startSample = Math.floor(sr * b * (beepDur + gapDur));
-    const beepSamples = Math.floor(sr * beepDur);
-    for (let i = 0; i < beepSamples; i++) {
-      const t = i / sr;
-      // 正弦波 + 轻微泛音，更接近QQ那种清脆感
-      let sample = Math.sin(2 * Math.PI * freq * t) * 0.7
-                 + Math.sin(2 * Math.PI * freq * 2 * t) * 0.15
-                 + Math.sin(2 * Math.PI * freq * 3 * t) * 0.05;
-      // 包络：快速起音，持续，快速衰减
-      const attack = Math.min(1, i / (sr * 0.005));  // 5ms 起音
-      const release = Math.min(1, (beepSamples - i) / (sr * 0.01)); // 10ms 衰减
-      sample *= attack * release;
-      if (startSample + i < len) {
-        data[startSample + i] = sample * 0.3; // 总音量控制
-      }
-    }
-  }
-  return buf;
-}
-
-function ensureQQBuffers() {
-  if (!qqMsgBuffer) {
-    qqTickBuffer = generateQQToneBuffer(1);
-    qqFlipBuffer = generateQQToneBuffer(2);
-    qqMsgBuffer = generateQQToneBuffer(3);
-  }
-}
-
-function playBuffer(buffer, volume) {
+function playTick() {
   try {
     const ctx = getAudioCtx();
-    ensureQQBuffers();
-    const source = ctx.createBufferSource();
+    const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    source.buffer = buffer;
-    source.connect(gain);
+    osc.connect(gain);
     gain.connect(ctx.destination);
-    gain.gain.value = volume;
-    source.start(0);
+    osc.frequency.value = 800;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.1);
   } catch(e) {}
 }
 
-// 滚动时：单个短促的"嘀"
-function playTick() {
-  ensureQQBuffers();
-  playBuffer(qqTickBuffer, 0.3);
-}
-
-// 翻牌时：双连"嘀嘀"
 function playFlip() {
-  ensureQQBuffers();
-  playBuffer(qqFlipBuffer, 0.6);
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 600 + Math.random() * 400;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
+  } catch(e) {}
 }
 
-// 中奖时：QQ经典完整三连"嘀嘀嘀"
 function playWin() {
-  ensureQQBuffers();
-  playBuffer(qqMsgBuffer, 1.0);
+  try {
+    const ctx = getAudioCtx();
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.3);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.3);
+    });
+  } catch(e) {}
 }
 
 function toggleSound() {
