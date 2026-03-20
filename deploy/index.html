@@ -65,26 +65,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-reset{background:var(--glass);border:1px solid rgba(255,255,255,0.12);color:var(--text-m);padding:10px 24px;border-radius:12px;font-size:0.85rem;display:none;margin-top:12px}
 .btn-reset:hover{background:rgba(255,255,255,0.15);color:#fff}
 
-/* ========== Quick Pick Buttons ========== */
-.quick-picks{display:flex;gap:8px;margin-left:4px}
-.quick-btn{width:44px;height:44px;border-radius:12px;border:1.5px solid rgba(43,123,255,0.35);background:rgba(43,123,255,0.12);color:var(--blue-l);font-size:1rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .25s;display:flex;align-items:center;justify-content:center}
-.quick-btn:hover{background:rgba(43,123,255,0.3);border-color:var(--blue-l);color:#fff;transform:translateY(-2px);box-shadow:0 4px 16px rgba(43,123,255,0.3)}
-.quick-btn:active{transform:scale(0.95)}
-.quick-btn.active{background:var(--blue);border-color:var(--blue-l);color:#fff;box-shadow:0 0 12px rgba(43,123,255,0.4)}
-.fullscreen-mode .quick-btn{width:56px;height:56px;font-size:1.3rem;border-radius:16px}
-
-/* ========== Export Button ========== */
-.export-bar{display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px}
-.export-btn{background:var(--glass);border:1px solid rgba(255,255,255,0.1);color:var(--text-m);padding:8px 18px;border-radius:10px;cursor:pointer;font-size:0.82rem;font-family:var(--font);transition:all .3s;display:flex;align-items:center;gap:6px}
-.export-btn:hover{background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.2);transform:translateY(-1px)}
-.export-btn svg{width:14px;height:14px;fill:currentColor}
-.export-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:rgba(0,0,0,0.85);color:#fff;padding:14px 28px;border-radius:12px;font-size:0.95rem;font-weight:600;z-index:10000;opacity:0;transition:all .3s ease;pointer-events:none;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1)}
-.export-toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-
-/* ========== Interaction Lock Overlay ========== */
-.draw-lock{pointer-events:none;opacity:0.5;transition:opacity .3s}
-.lottery-control.locked .lottery-input,.lottery-control.locked .quick-btn,.lottery-control.locked .btn-go{pointer-events:none;opacity:0.4}
-
 /* ========== Cards Area ========== */
 .cards-area{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin:20px 0;perspective:1200px;min-height:100px}
 
@@ -121,10 +101,22 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .fullscreen-mode .card-front .slot-name{font-size:1.9rem}
 .fullscreen-mode .card.slot-settled .card-front .slot-name{font-size:2.1rem}
 
-/* ========== Gold Edge Glow (Subtle Border Halo) ========== */
-.card.halo-active .card-inner{border:2px solid rgba(255,215,0,0.5);box-shadow:0 0 12px rgba(255,215,0,0.2),0 0 4px rgba(255,215,0,0.15),inset 0 0 8px rgba(255,215,0,0.05);animation:edgeGlow 2.5s ease-in-out infinite}
+/* ========== Gold Halo (Rotating Ring) ========== */
+.card.halo-active::before,.card.halo-active::after{content:'';position:absolute;top:-6px;left:-6px;right:-6px;bottom:-6px;border-radius:20px;pointer-events:none;z-index:10}
+.card.halo-active::before{background:conic-gradient(from 0deg,transparent,rgba(255,215,0,0.7),transparent,rgba(255,215,0,0.4),transparent,rgba(255,215,0,0.7),transparent);animation:haloSpin 2.5s linear infinite;opacity:0;animation-fill-mode:forwards}
+.card.halo-active::after{background:conic-gradient(from 180deg,transparent,rgba(255,165,0,0.5),transparent,rgba(255,215,0,0.3),transparent);animation:haloSpin 3.5s linear infinite reverse;opacity:0;animation-fill-mode:forwards}
+.card.halo-active::before{animation:haloSpin 2.5s linear infinite, haloFadeIn .6s ease-out forwards}
+.card.halo-active::after{animation:haloSpin 3.5s linear infinite reverse, haloFadeIn .6s ease-out .1s forwards}
 
-@keyframes edgeGlow{0%,100%{border-color:rgba(255,215,0,0.4);box-shadow:0 0 10px rgba(255,215,0,0.15),0 0 4px rgba(255,215,0,0.1)}50%{border-color:rgba(255,215,0,0.7);box-shadow:0 0 18px rgba(255,215,0,0.3),0 0 6px rgba(255,215,0,0.2)}}
+/* Halo glow on the card itself */
+.card.halo-active .card-inner{box-shadow:0 0 30px rgba(255,215,0,0.25),0 0 60px rgba(255,215,0,0.1)}
+
+/* Sparkle particles around the card */
+.card-sparkle{position:absolute;width:4px;height:4px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:11;box-shadow:0 0 6px rgba(255,215,0,0.8);animation:sparkleFloat 1.5s ease-out forwards}
+
+@keyframes haloSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes haloFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sparkleFloat{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0)}}
 
 @keyframes cardEnter{from{opacity:0;transform:scale(0.5) rotateZ(10deg)}to{opacity:1;transform:scale(1) rotateZ(0)}}
 @keyframes wiggle{from{transform:rotateZ(-3deg) rotateY(-5deg)}to{transform:rotateZ(3deg) rotateY(5deg)}}
@@ -276,12 +268,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <span class="input-hint">本轮抽取</span>
       <input type="number" class="lottery-input" id="drawNum" min="1" placeholder="N" autocomplete="off">
       <span class="input-hint">人</span>
-      <div class="quick-picks">
-        <button class="quick-btn" onclick="quickPick(1, this)">1</button>
-        <button class="quick-btn" onclick="quickPick(3, this)">3</button>
-        <button class="quick-btn" onclick="quickPick(5, this)">5</button>
-        <button class="quick-btn" onclick="quickPick(10, this)">10</button>
-      </div>
       <button class="btn btn-go" id="goBtn" onclick="startDraw()">开始抽奖</button>
     </div>
 
@@ -300,16 +286,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- History -->
     <div class="history-area">
       <div class="section-title">抽奖记录</div>
-      <div class="export-bar" id="exportBar" style="display:none">
-        <button class="export-btn" onclick="exportCopy()">
-          <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-          复制记录
-        </button>
-        <button class="export-btn" onclick="exportDownload()">
-          <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-          导出文件
-        </button>
-      </div>
       <div id="historyContent">
         <div class="history-empty">暂无抽奖记录，输入人数开始抽奖吧 ✨</div>
       </div>
@@ -592,25 +568,15 @@ const ALL_DATA = [
 ];
 
 // ==================== BG PARSER ====================
-// 从班级字段解析出 BG 名称
-// 格式如："CSIG3班" → "CSIG"，"S12班" → "S"，"Overseas3班" → "Overseas"
-function parseBG(className) {
-  const m = className.match(/^(.+?)(\d+)班$/);
-  if (m) return m[1].trim();
-  return '未知';
-}
-
-// 从班级字段解析出 "x班" 部分
-// 格式如："CDG1班" → "1班"，"S12班" → "12班"，"Overseas3班" → "3班"
-function parseClassNum(className) {
-  const m = className.match(/(\d+班)$/);
-  if (m) return m[1];
-  return className;
-}
-
-// 格式化卡片显示："CDG1班" → "1班 - CDG"
-function formatCardDisplay(className) {
-  return parseClassNum(className) + ' - ' + parseBG(className);
+// 从班级字段解析出 BG 和班级编号
+// 格式如："CSIG3班" → { bg: "CSIG", classNum: "3", display: "3班 · CSIG" }
+// 贪婪匹配 .+ 确保 S1/S2/S3 等以数字结尾的 BG 名被正确解析
+function parseClass(className) {
+  const m = className.match(/^(.+)(\d)\s*班$/);
+  if (m) {
+    return { bg: m[1].trim(), classNum: m[2], display: m[2] + '班 · ' + m[1].trim(), fullClass: className };
+  }
+  return { bg: '未知', classNum: '', display: className, fullClass: className };
 }
 
 // ==================== STATE ====================
@@ -621,7 +587,7 @@ let isDrawing = false;
 let soundEnabled = true;
 
 // Stats maps
-let classWinCount = {}; // { className: count }
+let classWinCount = {}; // { fullClassName: count }
 let bgWinCount = {};    // { bgName: count }
 
 // ==================== INIT ====================
@@ -642,45 +608,6 @@ function setupKeyboard() {
   document.getElementById('drawNum').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !isDrawing) startDraw();
   });
-  // Space bar as shortcut to start draw or next round
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
-      e.preventDefault();
-      if (isDrawing) return;
-      const nextBtn = document.getElementById('nextBtn');
-      if (nextBtn.style.display !== 'none') { nextRound(); return; }
-      startDraw();
-    }
-  });
-}
-
-// ==================== QUICK PICK ====================
-function quickPick(n, btn) {
-  if (isDrawing) return;
-  const input = document.getElementById('drawNum');
-  input.value = n;
-  // Highlight active quick button
-  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-}
-
-// ==================== INTERACTION LOCK ====================
-function lockInteraction() {
-  document.getElementById('lotteryControl').classList.add('locked');
-  document.getElementById('goBtn').disabled = true;
-  document.querySelectorAll('.quick-btn').forEach(b => b.disabled = true);
-  document.getElementById('drawNum').disabled = true;
-}
-
-function unlockInteraction() {
-  document.getElementById('lotteryControl').classList.remove('locked');
-  document.getElementById('goBtn').disabled = false;
-  document.querySelectorAll('.quick-btn').forEach(b => b.disabled = false);
-  document.getElementById('drawNum').disabled = false;
-  if (candidates.length === 0) {
-    document.getElementById('goBtn').disabled = true;
-    document.getElementById('goBtn').textContent = '已全部抽完';
-  }
 }
 
 // ==================== DRAW LOGIC ====================
@@ -703,7 +630,6 @@ function startDraw() {
   }
 
   isDrawing = true;
-  lockInteraction();
   roundNum++;
 
   // Fisher-Yates shuffle
@@ -720,14 +646,15 @@ function startDraw() {
 
   // Update stats maps
   winners.forEach(w => {
-    const classNum = parseClassNum(w.className);
-    classWinCount[classNum] = (classWinCount[classNum] || 0) + 1;
-    const bg = parseBG(w.className);
-    bgWinCount[bg] = (bgWinCount[bg] || 0) + 1;
+    const parsed = parseClass(w.className);
+    const classKey = parsed.classNum + '班';
+    classWinCount[classKey] = (classWinCount[classKey] || 0) + 1;
+    const bgKey = /^S\d$/.test(parsed.bg) ? 'S线' : parsed.bg;
+    bgWinCount[bgKey] = (bgWinCount[bgKey] || 0) + 1;
   });
 
   // Save history
-  history.push({ round: roundNum, winners: [...winners] });
+  history.push({ round: roundNum, winners: winners.map(w => ({...w, parsed: parseClass(w.className)})) });
 
   // Hide control, show cards
   document.getElementById('lotteryControl').style.display = 'none';
@@ -768,6 +695,7 @@ function generateCards(winners) {
   const area = document.getElementById('cardsArea');
   area.innerHTML = '';
   winners.forEach((w, i) => {
+    const parsed = parseClass(w.className);
     const card = document.createElement('div');
     card.className = 'card';
     card.style.animationDelay = (i * 0.06) + 's';
@@ -781,7 +709,7 @@ function generateCards(winners) {
         <div class="card-face card-back">
           <div class="winner-name${w.name.length > 4 ? ' long-name' : ''}">${w.name}</div>
           <div class="winner-ename">${w.id}</div>
-          <div class="winner-class">${formatCardDisplay(w.className)}</div>
+          <div class="winner-class">${parsed.display}</div>
         </div>
       </div>
     `;
@@ -867,6 +795,26 @@ function startSlotRoll(winners) {
   });
 }
 
+// ==================== SPARKLE PARTICLES ====================
+function spawnSparkles(card) {
+  const rect = card.getBoundingClientRect();
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  for (let i = 0; i < 12; i++) {
+    const spark = document.createElement('div');
+    spark.className = 'card-sparkle';
+    const angle = (Math.PI * 2 / 12) * i + Math.random() * 0.5;
+    const dist = 40 + Math.random() * 40;
+    spark.style.setProperty('--sx', Math.cos(angle) * dist + 'px');
+    spark.style.setProperty('--sy', Math.sin(angle) * dist + 'px');
+    spark.style.left = cx + 'px';
+    spark.style.top = cy + 'px';
+    spark.style.animationDelay = (Math.random() * 0.3) + 's';
+    card.appendChild(spark);
+    setTimeout(() => spark.remove(), 2000);
+  }
+}
+
 function flipCards(winners) {
   const cards = document.querySelectorAll('.card');
   // Clean up slot rolling classes
@@ -898,9 +846,10 @@ function flipCards(winners) {
       card.classList.add('flipped');
       if (soundEnabled) playFlip();
 
-      // Add subtle gold edge glow after flip completes
+      // Add gold halo after flip completes
       setTimeout(() => {
         card.classList.add('halo-active');
+        spawnSparkles(card);
       }, 400);
 
       // Celebrate effect on last card
@@ -911,7 +860,6 @@ function flipCards(winners) {
           if (soundEnabled) playWin();
           showNextButton();
           isDrawing = false;
-          unlockInteraction();
         }, 700);
       }
     }, delay);
@@ -935,7 +883,6 @@ function nextRound() {
   document.getElementById('resetBtn').style.display = 'none';
   document.getElementById('lotteryControl').style.display = 'flex';
   document.getElementById('drawNum').value = '';
-  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('drawNum').focus();
   if (candidates.length === 0) {
     document.getElementById('goBtn').disabled = true;
@@ -958,7 +905,6 @@ function resetAll() {
   document.getElementById('goBtn').disabled = false;
   document.getElementById('goBtn').textContent = '开始抽奖';
   document.getElementById('historyContent').innerHTML = '<div class="history-empty">暂无抽奖记录，输入人数开始抽奖吧 ✨</div>';
-  document.getElementById('exportBar').style.display = 'none';
   document.getElementById('classStats').innerHTML = '<div class="stat-empty">抽奖后将显示班级运气排行</div>';
   document.getElementById('bgStats').innerHTML = '<div class="stat-empty">抽奖后将显示BG运气排行</div>';
   updateStats();
@@ -970,10 +916,8 @@ function renderHistory() {
   const container = document.getElementById('historyContent');
   if (history.length === 0) {
     container.innerHTML = '<div class="history-empty">暂无抽奖记录</div>';
-    document.getElementById('exportBar').style.display = 'none';
     return;
   }
-  document.getElementById('exportBar').style.display = 'flex';
   let html = '<div class="history-rounds">';
   // Reverse order (newest first)
   for (let i = history.length - 1; i >= 0; i--) {
@@ -982,7 +926,7 @@ function renderHistory() {
       <div class="round-header">第 ${round.round} 轮 <span class="round-count">${round.winners.length} 人</span></div>
       <div class="round-winners">`;
     round.winners.forEach(w => {
-      html += `<span class="winner-tag">${w.name} <span class="tag-ename">${w.id}</span> <span class="tag-class">${formatCardDisplay(w.className)}</span></span>`;
+      html += `<span class="winner-tag">${w.name} <span class="tag-ename">${w.id}</span> <span class="tag-class">${w.parsed.display}</span></span>`;
     });
     html += '</div></div>';
   }
@@ -1021,89 +965,6 @@ function renderStatCard(containerId, dataMap, barColor) {
     </div>`;
   });
   container.innerHTML = html;
-}
-
-// ==================== EXPORT ====================
-function buildExportText() {
-  if (history.length === 0) return '';
-  let lines = ['腾讯校招新人封培 · 抽奖记录', '═'.repeat(30), ''];
-  const now = new Date();
-  lines.push('导出时间：' + now.toLocaleString('zh-CN'));
-  lines.push('总人数：' + ALL_DATA.length + '  已抽中：' + (ALL_DATA.length - candidates.length) + '  剩余：' + candidates.length);
-  lines.push('');
-  history.forEach(round => {
-    lines.push('── 第 ' + round.round + ' 轮（' + round.winners.length + ' 人）──');
-    round.winners.forEach((w, i) => {
-      lines.push('  ' + (i+1) + '. ' + w.name + '（' + w.id + '）— ' + formatCardDisplay(w.className));
-    });
-    lines.push('');
-  });
-  // Stats summary
-  const classEntries = Object.entries(classWinCount).sort((a,b) => b[1]-a[1]);
-  const bgEntries = Object.entries(bgWinCount).sort((a,b) => b[1]-a[1]);
-  if (classEntries.length > 0) {
-    lines.push('── 班级运气榜 ──');
-    classEntries.forEach(([name, count], i) => {
-      lines.push('  ' + (i+1) + '. ' + name + '：' + count + ' 人');
-    });
-    lines.push('');
-  }
-  if (bgEntries.length > 0) {
-    lines.push('── BG 运气榜 ──');
-    bgEntries.forEach(([name, count], i) => {
-      lines.push('  ' + (i+1) + '. ' + name + '：' + count + ' 人');
-    });
-    lines.push('');
-  }
-  lines.push('═'.repeat(30));
-  return lines.join('\n');
-}
-
-function showToast(msg) {
-  let toast = document.getElementById('exportToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'exportToast';
-    toast.className = 'export-toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2000);
-}
-
-function exportCopy() {
-  const text = buildExportText();
-  if (!text) { showToast('暂无记录可导出'); return; }
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('✓ 已复制到剪贴板');
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('✓ 已复制到剪贴板');
-  });
-}
-
-function exportDownload() {
-  const text = buildExportText();
-  if (!text) { showToast('暂无记录可导出'); return; }
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const now = new Date();
-  const dateStr = now.getFullYear() + '' + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
-  a.download = '封培抽奖记录_' + dateStr + '.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('✓ 文件已下载');
 }
 
 // ==================== CONFETTI ====================
