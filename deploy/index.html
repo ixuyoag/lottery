@@ -64,8 +64,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-next:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(255,215,0,0.5)}
 .btn-reset{background:var(--glass);border:1px solid rgba(255,255,255,0.12);color:var(--text-m);padding:10px 24px;border-radius:12px;font-size:0.85rem;display:none;margin-top:12px}
 .btn-reset:hover{background:rgba(255,255,255,0.15);color:#fff}
-.btn-home-reset{background:transparent;border:1px solid rgba(255,100,100,0.3);color:rgba(255,100,100,0.7);padding:8px 16px;border-radius:10px;font-size:0.78rem;margin-left:12px;white-space:nowrap}
-.btn-home-reset:hover{background:rgba(255,100,100,0.12);border-color:rgba(255,100,100,0.5);color:rgba(255,100,100,0.95)}
+.btn-home-reset{background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--text-m);padding:8px 16px;border-radius:10px;font-size:0.78rem;margin-left:12px;display:none;white-space:nowrap}
+.btn-home-reset:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.3);color:#fff}
 
 /* ========== Quick Pick Buttons ========== */
 .quick-picks{display:flex;gap:8px;margin-left:4px}
@@ -983,6 +983,7 @@ function resetAll() {
   document.getElementById('cardsArea').innerHTML = '';
   document.getElementById('nextBtn').style.display = 'none';
   document.getElementById('resetBtn').style.display = 'none';
+  document.getElementById('homeResetBtn').style.display = 'none';
   document.getElementById('lotteryControl').style.display = 'flex';
   document.getElementById('drawNum').value = '';
   document.getElementById('goBtn').disabled = false;
