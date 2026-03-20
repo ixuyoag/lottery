@@ -150,7 +150,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .winner-tag .tag-class{font-size:0.72rem;color:var(--text-m);font-weight:400}
 
 /* Stats */
-.stats-section{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.stats-section{display:grid;grid-template-columns:1fr;gap:24px;margin-bottom:24px}
 .stat-card{background:var(--glass);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;backdrop-filter:blur(8px)}
 .stat-card-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .stat-card-title .trophy{font-size:1.1rem}
@@ -320,10 +320,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <div class="stat-card">
         <div class="stat-card-title"><span class="trophy">🏆</span> 班级运气榜</div>
         <div id="classStats"><div class="stat-empty">抽奖后将显示班级运气排行</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-title"><span class="trophy">🏅</span> BG 运气榜</div>
-        <div id="bgStats"><div class="stat-empty">抽奖后将显示BG运气排行</div></div>
       </div>
     </div>
   </div>
@@ -591,18 +587,6 @@ const ALL_DATA = [
   {id:'xinwenwang',name:'王鑫文',className:'WXG5班'}
 ];
 
-// ==================== BG PARSER ====================
-// 从班级字段解析出 BG 和班级编号
-// 格式如："CSIG3班" → { bg: "CSIG", classNum: "3", display: "3班 · CSIG" }
-// 贪婪匹配 .+ 确保 S1/S2/S3 等以数字结尾的 BG 名被正确解析
-function parseClass(className) {
-  const m = className.match(/^(.+?)(\d+)\s*班$/);
-  if (m) {
-    return { bg: m[1].trim(), classNum: m[2], display: m[2] + '班 · ' + m[1].trim(), fullClass: className };
-  }
-  return { bg: '未知', classNum: '', display: className, fullClass: className };
-}
-
 // ==================== STATE ====================
 let candidates = [...ALL_DATA]; // 剩余候选人
 let history = []; // [{round, winners}]
@@ -611,8 +595,7 @@ let isDrawing = false;
 let soundEnabled = true;
 
 // Stats maps
-let classWinCount = {}; // { fullClassName: count }
-let bgWinCount = {};    // { bgName: count }
+let classWinCount = {}; // { className: count }
 
 // ==================== INIT ====================
 function init() {
@@ -710,15 +693,11 @@ function startDraw() {
 
   // Update stats maps
   winners.forEach(w => {
-    const parsed = parseClass(w.className);
-    const classKey = w.className; // 完整班级名作 key，避免 CDG1班 和 CSIG1班 混统
-    classWinCount[classKey] = (classWinCount[classKey] || 0) + 1;
-    const bgKey = /^S\d*$/.test(parsed.bg) ? 'S线' : parsed.bg;
-    bgWinCount[bgKey] = (bgWinCount[bgKey] || 0) + 1;
+    classWinCount[w.className] = (classWinCount[w.className] || 0) + 1;
   });
 
   // Save history
-  history.push({ round: roundNum, winners: winners.map(w => ({...w, parsed: parseClass(w.className)})) });
+  history.push({ round: roundNum, winners: [...winners] });
 
   // Hide control, show cards
   document.getElementById('lotteryControl').style.display = 'none';
@@ -759,7 +738,6 @@ function generateCards(winners) {
   const area = document.getElementById('cardsArea');
   area.innerHTML = '';
   winners.forEach((w, i) => {
-    const parsed = parseClass(w.className);
     const card = document.createElement('div');
     card.className = 'card';
     card.style.animationDelay = (i * 0.06) + 's';
@@ -773,7 +751,7 @@ function generateCards(winners) {
         <div class="card-face card-back">
           <div class="winner-name${w.name.length > 4 ? ' long-name' : ''}">${w.name}</div>
           <div class="winner-ename">${w.id}</div>
-          <div class="winner-class">${parsed.display}</div>
+          <div class="winner-class">${w.className}</div>
         </div>
       </div>
     `;
@@ -941,7 +919,6 @@ function resetAll() {
   history = [];
   roundNum = 0;
   classWinCount = {};
-  bgWinCount = {};
   document.getElementById('cardsArea').innerHTML = '';
   document.getElementById('nextBtn').style.display = 'none';
   document.getElementById('resetBtn').style.display = 'none';
@@ -952,7 +929,6 @@ function resetAll() {
   document.getElementById('historyContent').innerHTML = '<div class="history-empty">暂无抽奖记录，输入人数开始抽奖吧 ✨</div>';
   document.getElementById('exportBar').style.display = 'none';
   document.getElementById('classStats').innerHTML = '<div class="stat-empty">抽奖后将显示班级运气排行</div>';
-  document.getElementById('bgStats').innerHTML = '<div class="stat-empty">抽奖后将显示BG运气排行</div>';
   updateStats();
   isDrawing = false;
 }
@@ -974,7 +950,7 @@ function renderHistory() {
       <div class="round-header">第 ${round.round} 轮 <span class="round-count">${round.winners.length} 人</span></div>
       <div class="round-winners">`;
     round.winners.forEach(w => {
-      html += `<span class="winner-tag">${w.name} <span class="tag-ename">${w.id}</span> <span class="tag-class">${w.parsed.display}</span></span>`;
+      html += `<span class="winner-tag">${w.name} <span class="tag-ename">${w.id}</span> <span class="tag-class">${w.className}</span></span>`;
     });
     html += '</div></div>';
   }
@@ -985,7 +961,6 @@ function renderHistory() {
 // ==================== RENDER STATS ====================
 function renderStats() {
   renderStatCard('classStats', classWinCount, 'blue');
-  renderStatCard('bgStats', bgWinCount, 'gold');
 }
 
 function renderStatCard(containerId, dataMap, barColor) {
@@ -1026,23 +1001,15 @@ function buildExportText() {
   history.forEach(round => {
     lines.push('── 第 ' + round.round + ' 轮（' + round.winners.length + ' 人）──');
     round.winners.forEach((w, i) => {
-      lines.push('  ' + (i+1) + '. ' + w.name + '（' + w.id + '）— ' + w.parsed.display);
+      lines.push('  ' + (i+1) + '. ' + w.name + '（' + w.id + '）— ' + w.className);
     });
     lines.push('');
   });
   // Stats summary
   const classEntries = Object.entries(classWinCount).sort((a,b) => b[1]-a[1]);
-  const bgEntries = Object.entries(bgWinCount).sort((a,b) => b[1]-a[1]);
   if (classEntries.length > 0) {
     lines.push('── 班级运气榜 ──');
     classEntries.forEach(([name, count], i) => {
-      lines.push('  ' + (i+1) + '. ' + name + '：' + count + ' 人');
-    });
-    lines.push('');
-  }
-  if (bgEntries.length > 0) {
-    lines.push('── BG 运气榜 ──');
-    bgEntries.forEach(([name, count], i) => {
       lines.push('  ' + (i+1) + '. ' + name + '：' + count + ' 人');
     });
     lines.push('');
