@@ -600,6 +600,19 @@ function parseBG(className) {
   return '未知';
 }
 
+// 从班级字段解析出 "x班" 部分
+// 格式如："CDG1班" → "1班"，"S12班" → "12班"，"Overseas3班" → "3班"
+function parseClassNum(className) {
+  const m = className.match(/(\d+班)$/);
+  if (m) return m[1];
+  return className;
+}
+
+// 格式化卡片显示："CDG1班" → "1班 - CDG"
+function formatCardDisplay(className) {
+  return parseClassNum(className) + ' - ' + parseBG(className);
+}
+
 // ==================== STATE ====================
 let candidates = [...ALL_DATA]; // 剩余候选人
 let history = []; // [{round, winners}]
@@ -707,7 +720,8 @@ function startDraw() {
 
   // Update stats maps
   winners.forEach(w => {
-    classWinCount[w.className] = (classWinCount[w.className] || 0) + 1;
+    const classNum = parseClassNum(w.className);
+    classWinCount[classNum] = (classWinCount[classNum] || 0) + 1;
     const bg = parseBG(w.className);
     bgWinCount[bg] = (bgWinCount[bg] || 0) + 1;
   });
@@ -767,7 +781,7 @@ function generateCards(winners) {
         <div class="card-face card-back">
           <div class="winner-name${w.name.length > 4 ? ' long-name' : ''}">${w.name}</div>
           <div class="winner-ename">${w.id}</div>
-          <div class="winner-class">${w.className}</div>
+          <div class="winner-class">${formatCardDisplay(w.className)}</div>
         </div>
       </div>
     `;
@@ -968,7 +982,7 @@ function renderHistory() {
       <div class="round-header">第 ${round.round} 轮 <span class="round-count">${round.winners.length} 人</span></div>
       <div class="round-winners">`;
     round.winners.forEach(w => {
-      html += `<span class="winner-tag">${w.name} <span class="tag-ename">${w.id}</span> <span class="tag-class">${w.className}</span></span>`;
+      html += `<span class="winner-tag">${w.name} <span class="tag-ename">${w.id}</span> <span class="tag-class">${formatCardDisplay(w.className)}</span></span>`;
     });
     html += '</div></div>';
   }
@@ -1020,7 +1034,7 @@ function buildExportText() {
   history.forEach(round => {
     lines.push('── 第 ' + round.round + ' 轮（' + round.winners.length + ' 人）──');
     round.winners.forEach((w, i) => {
-      lines.push('  ' + (i+1) + '. ' + w.name + '（' + w.id + '）— ' + w.className);
+      lines.push('  ' + (i+1) + '. ' + w.name + '（' + w.id + '）— ' + formatCardDisplay(w.className));
     });
     lines.push('');
   });
