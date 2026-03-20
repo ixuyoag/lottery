@@ -277,11 +277,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <input type="number" class="lottery-input" id="drawNum" min="1" placeholder="N" autocomplete="off">
       <span class="input-hint">人</span>
       <div class="quick-picks">
-        <button class="quick-btn" onclick="quickPick(1, this)">1</button>
-        <button class="quick-btn" onclick="quickPick(3, this)">3</button>
         <button class="quick-btn" onclick="quickPick(5, this)">5</button>
-        <button class="quick-btn" onclick="quickPick(20, this)">20</button>
         <button class="quick-btn" onclick="quickPick(10, this)">10</button>
+        <button class="quick-btn" onclick="quickPick(20, this)">20</button>
+        <button class="quick-btn" onclick="quickPick(30, this)">30</button>
       </div>
       <button class="btn btn-go" id="goBtn" onclick="startDraw()">开始抽奖</button>
     </div>
