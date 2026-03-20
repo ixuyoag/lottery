@@ -1079,6 +1079,7 @@ function setupParticles() {
   const canvas = document.getElementById('particles');
   const ctx = canvas.getContext('2d');
   let w, h, particles;
+  const EDGE = 0.15; // 边缘区域占比（15%）
 
   function resize() {
     w = canvas.width = window.innerWidth;
@@ -1087,32 +1088,64 @@ function setupParticles() {
   resize();
   window.addEventListener('resize', resize);
 
-  // Create particles
-  const count = 80;
+  // 在边缘区域生成随机坐标
+  function randEdgePos() {
+    // 随机选一条边（上/下/左/右）
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    switch (side) {
+      case 0: // 上
+        x = Math.random() * w;
+        y = Math.random() * h * EDGE;
+        break;
+      case 1: // 下
+        x = Math.random() * w;
+        y = h - Math.random() * h * EDGE;
+        break;
+      case 2: // 左
+        x = Math.random() * w * EDGE;
+        y = Math.random() * h;
+        break;
+      case 3: // 右
+        x = w - Math.random() * w * EDGE;
+        y = Math.random() * h;
+        break;
+    }
+    return { x, y };
+  }
+
+  // Create particles — only along edges
+  const count = 50;
   particles = [];
   for (let i = 0; i < count; i++) {
+    const pos = randEdgePos();
     particles.push({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5,
-      r: 1.5 + Math.random() * 2,
-      alpha: 0.3 + Math.random() * 0.5
+      x: pos.x,
+      y: pos.y,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: 1 + Math.random() * 1.5,
+      alpha: 0.2 + Math.random() * 0.4
     });
+  }
+
+  // 判断是否在边缘区域
+  function isEdge(x, y) {
+    return x < w * EDGE || x > w * (1 - EDGE) || y < h * EDGE || y > h * (1 - EDGE);
   }
 
   function draw() {
     ctx.clearRect(0, 0, w, h);
 
-    // Draw connections
+    // Draw connections (only between nearby edge particles)
     for (let i = 0; i < count; i++) {
       for (let j = i + 1; j < count; j++) {
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 150) {
+        if (dist < 120) {
           ctx.beginPath();
-          ctx.strokeStyle = `rgba(0,82,217,${0.12 * (1 - dist / 150)})`;
+          ctx.strokeStyle = `rgba(0,82,217,${0.08 * (1 - dist / 120)})`;
           ctx.lineWidth = 0.5;
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
@@ -1121,24 +1154,51 @@ function setupParticles() {
       }
     }
 
-    // Draw particles
+    // Draw & move particles
     particles.forEach(p => {
+      // 粒子透明度：越靠近中心越淡，边缘最亮
+      const edgeFactor = Math.min(
+        p.x / (w * EDGE * 2), (w - p.x) / (w * EDGE * 2),
+        p.y / (h * EDGE * 2), (h - p.y) / (h * EDGE * 2)
+      );
+      const fade = Math.max(0, 1 - edgeFactor);
+
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(43,123,255,${p.alpha})`;
+      ctx.fillStyle = `rgba(43,123,255,${p.alpha * fade})`;
       ctx.fill();
 
       // Glow
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(43,123,255,${p.alpha * 0.1})`;
+      ctx.fillStyle = `rgba(43,123,255,${p.alpha * 0.08 * fade})`;
       ctx.fill();
 
       // Move
       p.x += p.vx;
       p.y += p.vy;
+
+      // 如果飘到中心区域，轻轻推回边缘
+      if (!isEdge(p.x, p.y)) {
+        const cx = w / 2, cy = h / 2;
+        const pushX = (p.x - cx) * 0.002;
+        const pushY = (p.y - cy) * 0.002;
+        p.vx += pushX;
+        p.vy += pushY;
+      }
+
+      // 限速
+      const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      if (speed > 0.5) {
+        p.vx *= 0.5 / speed;
+        p.vy *= 0.5 / speed;
+      }
+
+      // 边界反弹
       if (p.x < 0 || p.x > w) p.vx *= -1;
       if (p.y < 0 || p.y > h) p.vy *= -1;
+      p.x = Math.max(0, Math.min(w, p.x));
+      p.y = Math.max(0, Math.min(h, p.y));
     });
 
     requestAnimationFrame(draw);
