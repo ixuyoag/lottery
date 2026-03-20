@@ -738,10 +738,10 @@ function startDraw() {
   generateCards(winners);
 
   // Animate: wiggle + slot machine roll → each card flips when its slot stops
-  const cardInterval = 300; // 每张卡之间的老虎机滚动差（越后面滚越久）
-  const baseRollTime = 1200; // 第一张卡的最低滚动时间
-  setTimeout(() => startWiggle(), 100);
-  setTimeout(() => startSlotRoll(winners, cardInterval, baseRollTime), 200);
+  const cardInterval = 180; // 每张卡之间的老虎机滚动差（越后面滚越久）
+  const baseRollTime = 800; // 第一张卡的最低滚动时间
+  setTimeout(() => startWiggle(), 60);
+  setTimeout(() => startSlotRoll(winners, cardInterval, baseRollTime), 120);
 
   updateStats();
 }
@@ -830,7 +830,7 @@ function startSlotRoll(winners, cardInterval, baseRollTime) {
       setTimeout(() => {
         card.classList.add('flipped');
         if (soundEnabled) playFlip();
-        setTimeout(() => card.classList.add('halo-active'), 400);
+        setTimeout(() => card.classList.add('halo-active'), 200);
 
         flippedCount++;
         // 最后一张卡翻完 → 庆祝
@@ -842,9 +842,9 @@ function startSlotRoll(winners, cardInterval, baseRollTime) {
             showNextButton();
             isDrawing = false;
             unlockInteraction();
-          }, 500);
+          }, 250);
         }
-      }, 80); // 停下后 80ms 翻牌，几乎无缝
+      }, 30); // 停下后 30ms 翻牌，几乎瞬间
     }
 
     // 快速滚动阶段
@@ -864,11 +864,11 @@ function startSlotRoll(winners, cardInterval, baseRollTime) {
     slotTimers.push(intervalId);
 
     // 渐进减速 + 最终停下
-    const slowPhaseStart = totalDuration * 0.6;
+    const slowPhaseStart = totalDuration * 0.5;
     let currentDelay = speed;
     function slowRoll() {
       if (elapsed >= totalDuration) return;
-      currentDelay = Math.min(200, currentDelay * 1.12);
+      currentDelay = Math.min(150, currentDelay * 1.18);
       const randomName = allNames[Math.floor(Math.random() * allNames.length)];
       slotEl.textContent = randomName;
       elapsed += currentDelay;
