@@ -624,9 +624,59 @@ let soundEnabled = true;
 let classWinCount = {}; // { className: count }
 let bgWinCount = {};    // { bgName: count }
 
+// ==================== PERSISTENCE ====================
+const STORAGE_KEY = 'lottery_state_v1';
+
+function saveState() {
+  try {
+    const state = {
+      candidates,
+      history,
+      roundNum,
+      classWinCount,
+      bgWinCount,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) { console.warn('保存状态失败:', e); }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const state = JSON.parse(raw);
+    // 校验数据完整性
+    if (!Array.isArray(state.candidates) || !Array.isArray(state.history)) return false;
+    candidates = state.candidates;
+    history = state.history;
+    roundNum = state.roundNum || 0;
+    classWinCount = state.classWinCount || {};
+    bgWinCount = state.bgWinCount || {};
+    return true;
+  } catch (e) {
+    console.warn('恢复状态失败:', e);
+    return false;
+  }
+}
+
+function clearState() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 // ==================== INIT ====================
 function init() {
+  const restored = loadState();
   updateStats();
+  if (restored && history.length > 0) {
+    renderHistory();
+    renderStats();
+    // 如果所有人已抽完，更新按钮状态
+    if (candidates.length === 0) {
+      document.getElementById('goBtn').disabled = true;
+      document.getElementById('goBtn').textContent = '已全部抽完';
+    }
+  }
   setupParticles();
   setupKeyboard();
   document.getElementById('drawNum').focus();
@@ -842,6 +892,7 @@ function startSlotRoll(winners, cardInterval, baseRollTime) {
             showNextButton();
             isDrawing = false;
             unlockInteraction();
+            saveState(); // 持久化当前状态
           }, 250);
         }
       }, 30); // 停下后 30ms 翻牌，几乎瞬间
@@ -917,6 +968,7 @@ function nextRound() {
 
 function resetAll() {
   if (!confirm('确定要重置所有抽奖记录吗？')) return;
+  clearState(); // 清除持久化数据
   candidates = [...ALL_DATA];
   history = [];
   roundNum = 0;
